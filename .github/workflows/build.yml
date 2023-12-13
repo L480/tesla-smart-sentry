@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    - name: Go build
+      run: |
+        cd src
+        GOOS=linux GOARCH=arm64 go build -o /tmp/build/tesla-smart-sentry-linux-arm64 ./cmd/tesla-smart-sentry
+        GOOS=linux GOARCH=arm go build -o /tmp/build/tesla-smart-sentry-linux-arm ./cmd/tesla-smart-sentry
+        GOOS=linux GOARCH=amd64 go build -o /tmp/build/tesla-smart-sentry-linux-amd64 ./cmd/tesla-smart-sentry
+        GOOS=linux GOARCH=arm64 go build -o /tmp/build/tesla-ble-proxy-linux-arm64 ./cmd/tesla-ble-proxy
+        GOOS=linux GOARCH=arm go build -o /tmp/build/tesla-ble-proxy-linux-arm ./cmd/tesla-ble-proxy
+        GOOS=linux GOARCH=amd64 go build -o /tmp/build/tesla-ble-proxy-linux-amd64 ./cmd/tesla-ble-proxy
+    - name: Create release
+      run: |
+        gh release upload ${{ github.event.release.name }} /tmp/build/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to GitHub Packages
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Docker build and push tesla-smart-sentry
+      uses: docker/build-push-action@v5
+      with:
+        file: ./tesla-smart-sentry.Dockerfile
+        context: ./
+        push: true
+        platforms: linux/amd64,linux/arm64,linux/arm
+        tags: ghcr.io/l480/tesla-smart-sentry:${{ github.event.release.name }}, ghcr.io/l480/tesla-smart-sentry:latest
+    - name: Docker build and push tesla-ble-proxy
+      uses: docker/build-push-action@v5
+      with:
+        file: ./tesla-ble-proxy.Dockerfile
+        context: ./
+        push: true
+        platforms: linux/amd64,linux/arm64,linux/arm
+        tags: ghcr.io/l480/tesla-ble-proxy:${{ github.event.release.name }}, ghcr.io/l480/tesla-ble-proxy:latest
