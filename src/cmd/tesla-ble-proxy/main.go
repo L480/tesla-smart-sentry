@@ -13,6 +13,7 @@ import (
 
 	"github.com/L480/tesla-smart-sentry/internal/logger"
 	"github.com/L480/tesla-smart-sentry/internal/tesla"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/teslamotors/vehicle-command/pkg/vehicle"
 )
@@ -55,35 +56,24 @@ func main() {
 		ReadTimeout:  30 * time.Second,
 	}
 
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			t, _ := parseBody(r, w)
-			ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-			defer cancel()
-			if err := tesla.Execute(ctx, t, true, func(car *vehicle.Vehicle) error {
-				return car.Wakeup(ctx)
-			}); err != nil {
-				logger.Error("Couldn't wake up vehicle: %s", err)
-				w.WriteHeader(http.StatusBadGateway)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
-
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
 	router.HandleFunc("/sentry-mode/on", func(w http.ResponseWriter, r *http.Request) {
 		t, _ := parseBody(r, w)
 		defer os.Remove(t.PrivateKeyFile)
 		ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 		defer cancel()
+		if err := tesla.Execute(ctx, t, true, func(car *vehicle.Vehicle) error {
+			return car.Wakeup(ctx)
+		}); err != nil {
+			logger.Error("Failed to wake up vehicle: %s", err)
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		ctx, cancel = context.WithTimeout(context.Background(), contextTimeout)
+		defer cancel()
 		if err := tesla.Execute(ctx, t, false, func(car *vehicle.Vehicle) error {
 			return car.SetSentryMode(ctx, true)
 		}); err != nil {
-			logger.Error("Couldn't enable Sentry Mode: %s", err)
+			logger.Error("Failed to enable Sentry Mode: %s", err)
 			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
@@ -98,12 +88,18 @@ func main() {
 		if err := tesla.Execute(ctx, t, false, func(car *vehicle.Vehicle) error {
 			return car.SetSentryMode(ctx, false)
 		}); err != nil {
-			logger.Error("Couldn't disable Sentry Mode: %s", err)
+			logger.Error("Failed to disable Sentry Mode: %s", err)
 			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 		logger.Info("Sentry Mode is disabled.")
 	}).Methods("POST")
+
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	router.Use(func(next http.Handler) http.Handler { return handlers.LoggingHandler(os.Stdout, next) })
 
 	logger.Info("Waiting for requests on port %s.", port)
 	log.Fatal(srv.ListenAndServe())

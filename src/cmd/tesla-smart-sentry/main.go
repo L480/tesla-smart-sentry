@@ -127,7 +127,7 @@ func main() {
 			}
 			resp, _ := request.Connect(webhookEndpoint)
 			if resp.StatusCode != 200 {
-				logger.Error("Couldn't disable Sentry Mode (received HTTP %d).", resp.StatusCode)
+				logger.Error("Failed to disable Sentry Mode (received HTTP %d).", resp.StatusCode)
 			} else {
 				sentryState = false
 			}
@@ -138,7 +138,7 @@ func main() {
 			if err := tesla.Execute(ctx, teslaConfig, false, func(car *vehicle.Vehicle) error {
 				return car.SetSentryMode(ctx, false)
 			}); err != nil {
-				logger.Error("Couldn't disable Sentry Mode: %s", err)
+				logger.Error("Failed to disable Sentry Mode: %s", err)
 			} else {
 				sentryState = false
 			}
@@ -162,7 +162,7 @@ func main() {
 	}
 	resp, err := request.Connect(hueBridge)
 	if err != nil {
-		logger.Error("Couldn't connect to Hue bridge: %s", err)
+		logger.Error("Failed to connect to Hue bridge: %s", err)
 		os.Exit(1)
 	}
 
@@ -181,7 +181,7 @@ func main() {
 				}
 				resp, _ := request.Connect(webhookEndpoint)
 				if resp.StatusCode != 200 {
-					logger.Error("Couldn't enable Sentry Mode (received HTTP %d).", resp.StatusCode)
+					logger.Error("Failed to enable Sentry Mode (received HTTP %d).", resp.StatusCode)
 				} else {
 					sentryState = true
 				}
@@ -199,7 +199,7 @@ func main() {
 				if err := tesla.Execute(ctx, teslaConfig, false, func(car *vehicle.Vehicle) error {
 					return car.SetSentryMode(ctx, true)
 				}); err != nil {
-					logger.Error("Couldn't enable Sentry Mode: %s", err)
+					logger.Error("Failed to enable Sentry Mode: %s", err)
 				} else {
 					sentryState = true
 				}
@@ -214,7 +214,7 @@ func main() {
 		}
 	})
 	if sse != nil {
-		logger.Error("Couldn't subscribe to Hue bridge: %s", sse)
+		logger.Error("Failed to subscribe to Hue bridge: %s", sse)
 		os.Exit(1)
 	}
 }

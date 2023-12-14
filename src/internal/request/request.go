@@ -24,7 +24,7 @@ func Connect(e Endpoint) (*http.Response, error) {
 	client := &http.Client{Transport: tr}
 	req, err := http.NewRequest(e.Method, e.Url, strings.NewReader(e.Body))
 	if err != nil {
-		return nil, fmt.Errorf("couldn't connect to endpoint: %s", err)
+		return nil, fmt.Errorf("failed to connect to endpoint: %s", err)
 	}
 
 	for k, v := range e.Headers {
@@ -33,7 +33,7 @@ func Connect(e Endpoint) (*http.Response, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't send HTTP request: %s", err)
+		return nil, fmt.Errorf("failed to send HTTP request: %s", err)
 	}
 	return resp, nil
 }
@@ -43,7 +43,7 @@ func SubscribeSse(r *http.Response, c func([]byte)) error {
 		data := make([]byte, 1024)
 		_, err := r.Body.Read(data)
 		if err != nil {
-			return fmt.Errorf("couldn't retrieve SSE data: %s", err)
+			return fmt.Errorf("failed to retrieve SSE data: %s", err)
 		}
 		re := regexp.MustCompile("^[^[]*|\n*")
 		data = []byte(re.ReplaceAllString(string(data), ""))
