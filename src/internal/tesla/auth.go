@@ -45,14 +45,14 @@ func RefreshToken(c Config) {
 		}
 		resp, err := request.Connect(tokenEndpoint)
 		if err != nil {
-			logger.Error("Couldn't connect to token endpoint: %s", err)
+			logger.Error("Failed to connect to token endpoint: %s", err)
 			tokenTimer.Reset(retryInterval)
 			continue
 		}
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
-			logger.Error("Couldn't retrieve response body: %s", err)
+			logger.Error("Failed to retrieve response body: %s", err)
 			tokenTimer.Reset(retryInterval)
 			continue
 		}
@@ -68,7 +68,7 @@ func RefreshToken(c Config) {
 		json.Unmarshal(body, &jsonData)
 		accessTokenFile, err := os.Create(c.AccessTokenFile)
 		if err != nil {
-			logger.Error("Couldn't save access token: %s", err)
+			logger.Error("Failed to save access token: %s", err)
 			tokenTimer.Reset(retryInterval)
 			continue
 		}
@@ -76,7 +76,7 @@ func RefreshToken(c Config) {
 		accessTokenFile.Close()
 		refreshTokenFile, err := os.Create(c.RefreshTokenFile)
 		if err != nil {
-			logger.Error("Couldn't save refresh token: %s", err)
+			logger.Error("Failed to save refresh token: %s", err)
 			tokenTimer.Reset(retryInterval)
 			continue
 		}

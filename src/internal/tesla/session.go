@@ -81,8 +81,14 @@ func Execute(ctx context.Context, c Config, vcsecOnly bool, cmd func(*vehicle.Ve
 			domains = append(domains, protocol.DomainVCSEC)
 			domains = append(domains, protocol.DomainInfotainment)
 		}
-		if err := car.StartSession(ctx, domains); err != nil {
-			return fmt.Errorf("failed to perform handshake with vehicle: %s", err)
+		for {
+			sessionCtx, sessionCancel := context.WithTimeout(context.Background(), 2*time.Second)
+			if err := car.StartSession(sessionCtx, domains); err != nil {
+				sessionCancel()
+				continue
+			}
+			sessionCancel()
+			break
 		}
 		if err := cmd(car); err != nil {
 			return validateResult(err)
