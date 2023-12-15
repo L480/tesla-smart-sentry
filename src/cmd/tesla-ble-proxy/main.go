@@ -18,8 +18,6 @@ import (
 	"github.com/teslamotors/vehicle-command/pkg/vehicle"
 )
 
-var contextTimeout time.Duration = 15 * time.Second
-
 func parseBody(r *http.Request, w http.ResponseWriter) (tesla.Config, error) {
 	type certificate struct {
 		Vin        string `json:"vin"`
@@ -59,18 +57,15 @@ func main() {
 	router.HandleFunc("/sentry-mode/on", func(w http.ResponseWriter, r *http.Request) {
 		t, _ := parseBody(r, w)
 		defer os.Remove(t.PrivateKeyFile)
-		ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-		defer cancel()
-		if err := tesla.Execute(ctx, t, true, func(car *vehicle.Vehicle) error {
+		if err := tesla.Execute(t, true, func(ctx context.Context, car *vehicle.Vehicle) error {
 			return car.Wakeup(ctx)
 		}); err != nil {
 			logger.Error("Failed to wake up vehicle: %s", err)
 			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
-		ctx, cancel = context.WithTimeout(context.Background(), contextTimeout)
-		defer cancel()
-		if err := tesla.Execute(ctx, t, false, func(car *vehicle.Vehicle) error {
+		time.Sleep(1 * time.Second) // To avoid "ble: failed to enumerate device services: ATT request failed: input channel closed: io: read/write on closed pipe" error
+		if err := tesla.Execute(t, false, func(ctx context.Context, car *vehicle.Vehicle) error {
 			return car.SetSentryMode(ctx, true)
 		}); err != nil {
 			logger.Error("Failed to enable Sentry Mode: %s", err)
@@ -83,9 +78,7 @@ func main() {
 	router.HandleFunc("/sentry-mode/off", func(w http.ResponseWriter, r *http.Request) {
 		t, _ := parseBody(r, w)
 		defer os.Remove(t.PrivateKeyFile)
-		ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-		defer cancel()
-		if err := tesla.Execute(ctx, t, false, func(car *vehicle.Vehicle) error {
+		if err := tesla.Execute(t, false, func(ctx context.Context, car *vehicle.Vehicle) error {
 			return car.SetSentryMode(ctx, false)
 		}); err != nil {
 			logger.Error("Failed to disable Sentry Mode: %s", err)

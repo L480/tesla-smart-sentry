@@ -32,7 +32,15 @@ func validateResult(err error) error {
 	}
 }
 
-func Execute(ctx context.Context, c Config, vcsecOnly bool, cmd func(*vehicle.Vehicle) error) error {
+func Execute(c Config, vcsecOnly bool, cmd func(context.Context, *vehicle.Vehicle) error) error {
+	var timeout time.Duration
+	if c.Ble {
+		timeout = 15 * time.Second
+	} else {
+		timeout = 30 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	var car *vehicle.Vehicle
 	privateKey, err := protocol.LoadPrivateKey(c.PrivateKeyFile)
 	if err != nil {
@@ -74,6 +82,7 @@ func Execute(ctx context.Context, c Config, vcsecOnly bool, cmd func(*vehicle.Ve
 	defer car.Disconnect()
 
 	if c.Ble {
+		retries := 5 // Retry handshake and command execution up to x times to workaround race conditions with BLE
 		var domains []protocol.Domain
 		if vcsecOnly {
 			domains = append(domains, protocol.DomainVCSEC)
@@ -81,33 +90,47 @@ func Execute(ctx context.Context, c Config, vcsecOnly bool, cmd func(*vehicle.Ve
 			domains = append(domains, protocol.DomainVCSEC)
 			domains = append(domains, protocol.DomainInfotainment)
 		}
-		for {
+		for i := 1; i <= retries; i++ {
 			sessionCtx, sessionCancel := context.WithTimeout(context.Background(), 2*time.Second)
 			if err := car.StartSession(sessionCtx, domains); err != nil {
-				sessionCancel()
-				continue
+				if i != retries {
+					sessionCancel()
+					continue
+				} else {
+					sessionCancel()
+					return fmt.Errorf("failed to perform handshake with vehicle: %s", err)
+				}
 			}
 			sessionCancel()
-			break
 		}
-		if err := cmd(car); err != nil {
-			return validateResult(err)
+		for i := 1; i <= retries; i++ {
+			cmdCtx, cmdCancel := context.WithTimeout(context.Background(), 2*time.Second)
+			if err := cmd(cmdCtx, car); err != nil {
+				if i != retries {
+					cmdCancel()
+					continue
+				} else {
+					cmdCancel()
+					return fmt.Errorf("failed to execute command: %s", err)
+				}
+			}
+			cmdCancel()
 		}
 	} else {
 		if err := car.Wakeup(ctx); err != nil {
 			return fmt.Errorf("failed to wake up vehicle: %s", err)
 		}
+		if err := car.StartSession(ctx, nil); err != nil {
+			return fmt.Errorf("failed to perform handshake with vehicle: %s", err)
+		}
 		for {
-			if err := car.StartSession(ctx, nil); err != nil {
-				return fmt.Errorf("failed to perform handshake with vehicle: %s", err)
-			}
 			if err := car.Ping(ctx); err != nil {
 				time.Sleep(1 * time.Second)
 				continue
 			}
 			break
 		}
-		if err := cmd(car); err != nil {
+		if err := cmd(ctx, car); err != nil {
 			return validateResult(err)
 		}
 	}
