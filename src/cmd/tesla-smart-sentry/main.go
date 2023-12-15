@@ -34,7 +34,6 @@ var Env = map[string]string{
 }
 
 var sentryTimer *time.Timer = time.NewTimer(0)
-var contextTimeout time.Duration = 30 * time.Second
 
 func sentryTimeout(c func(bool)) {
 	<-sentryTimer.C
@@ -133,9 +132,7 @@ func main() {
 			}
 			resp.Body.Close()
 		} else {
-			ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-			defer cancel()
-			if err := tesla.Execute(ctx, teslaConfig, false, func(car *vehicle.Vehicle) error {
+			if err := tesla.Execute(teslaConfig, false, func(ctx context.Context, car *vehicle.Vehicle) error {
 				return car.SetSentryMode(ctx, false)
 			}); err != nil {
 				logger.Error("Failed to disable Sentry Mode: %s", err)
@@ -188,15 +185,12 @@ func main() {
 				resp.Body.Close()
 			} else {
 				if mode == "ble" {
-					ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-					defer cancel()
-					tesla.Execute(ctx, teslaConfig, true, func(car *vehicle.Vehicle) error {
+					tesla.Execute(teslaConfig, true, func(ctx context.Context, car *vehicle.Vehicle) error {
 						return car.Wakeup(ctx)
 					})
+					time.Sleep(1 * time.Second) // To avoid "ble: failed to enumerate device services: ATT request failed: input channel closed: io: read/write on closed pipe" error
 				}
-				ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-				defer cancel()
-				if err := tesla.Execute(ctx, teslaConfig, false, func(car *vehicle.Vehicle) error {
+				if err := tesla.Execute(teslaConfig, false, func(ctx context.Context, car *vehicle.Vehicle) error {
 					return car.SetSentryMode(ctx, true)
 				}); err != nil {
 					logger.Error("Failed to enable Sentry Mode: %s", err)

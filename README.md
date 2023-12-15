@@ -27,11 +27,11 @@ Since Sentry Mode requires the vehicle to remain awake, the vehicle's idle consu
 
 You can operate tesla-smart-sentry in three modes:
 
-| Mode    | Description                                                                                                                                                                          | Sentry Mode Activation Time                                                      |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| API     | Sends an end-to-end authenticated command via the Tesla Fleet API to the vehicle when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the internet.*         | Sleep: 15-20 secs<br>Awake: 1-3 secs                                             |
-| Webhook | Sends a webhook to any HTTP endpoint when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the webhook endpoint.*                                             | Depends on webhook endpoint<br>[tesla-ble-proxy](./tesla-ble-proxy.md): 8-14 secs |
-| BLE     | Sends an end-to-end authenticated command via Bluetooth directly to the vehicle.<br>*Raspberry Pi needs access to the Hue Bridge and must be within Bluetooth range of the vehicle.* | Sleep: 8-14 secs<br>Awake: 8-14 secs                                               |
+| Mode    | Description                                                                                                                                                                          | Sentry Mode Activation Time                                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| API     | Sends an end-to-end authenticated command via the Tesla Fleet API to the vehicle when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the internet.*         | Sleep: 15-20 secs<br>Awake: 1-3 secs                          |
+| Webhook | Sends a webhook to any HTTP endpoint when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the webhook endpoint.*                                             | Depends on webhook endpoint                                   |
+| BLE     | Sends an end-to-end authenticated command via Bluetooth directly to the vehicle.<br>*Raspberry Pi needs access to the Hue Bridge and must be within Bluetooth range of the vehicle.* | Sleep: 3-15 secs<br>Awake: 3-15 secs<br>Depends on distance |
 
 In addition to tesla-smart-sentry, there is also tesla-ble-proxy, a Bluetooth proxy provided as part of this repository that can be used in conjunction with webhook mode. A reference architecture can be found [here](./tesla-ble-proxy.md).
 
