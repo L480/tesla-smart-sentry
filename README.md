@@ -17,21 +17,22 @@ Since Sentry Mode requires the vehicle to remain awake, the vehicle's idle consu
 ## Hardware Requirements
 
 - [Philips Hue Bridge](https://www.philips-hue.com/en-us/p/hue-bridge/046677458478#overview)
-- [Philips Hue outdoor sensor](https://www.philips-hue.com/en-us/p/hue-outdoor-sensor/046677570989#overview)
+- [Philips Hue Outdoor Sensor](https://www.philips-hue.com/en-us/p/hue-outdoor-sensor/046677570989#overview)
   - Original Philips Hue sensors are recommended as you can configure sensor sensitivity.
 - [Raspberry Zero](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/)
   - Or any other ARM/ARM64/amd64 Linux board.
-  - BCM43* series chips are notorious for problems when both Wi-Fi and Bluetooth are used at the same time. An external Bluetooth dongle may be required.
+
+Check out the [supported hardware](./supported-hardware.md).
 
 ## Set up tesla-smart-sentry
 
 You can operate tesla-smart-sentry in three modes:
 
-| Mode    | Description                                                                                                                                                                          | Sentry Mode Activation Time                                   |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| API     | Sends an end-to-end authenticated command via the Tesla Fleet API to the vehicle when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the internet.*         | Sleep: 15-20 secs<br>Awake: 1-3 secs                          |
-| Webhook | Sends a webhook to any HTTP endpoint when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the webhook endpoint.*                                             | Depends on webhook endpoint                                   |
-| BLE     | Sends an end-to-end authenticated command via Bluetooth directly to the vehicle.<br>*Raspberry Pi needs access to the Hue Bridge and must be within Bluetooth range of the vehicle.* | Sleep: 3-15 secs<br>Awake: 3-15 secs<br>Depends on distance |
+| Mode    | Description                                                                                                                                                                          | Sentry Mode Activation Time                              |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| API     | Sends an end-to-end authenticated command via the Tesla Fleet API to the vehicle when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the internet.*         | Sleep: 15-20 secs<br>Awake: 1-3 secs                     |
+| Webhook | Sends a webhook to any HTTP endpoint when motion is detected.<br>*Raspberry Pi needs access to the Hue Bridge and the webhook endpoint.*                                             | Depends on webhook endpoint                              |
+| BLE     | Sends an end-to-end authenticated command via Bluetooth directly to the vehicle.<br>*Raspberry Pi needs access to the Hue Bridge and must be within Bluetooth range of the vehicle.* | Sleep: 4-20 secs<br>Awake: 4-20 secs<br>Depends on noise |
 
 In addition to tesla-smart-sentry, there is also tesla-ble-proxy, a Bluetooth proxy provided as part of this repository that can be used in conjunction with webhook mode. A reference architecture can be found [here](./tesla-ble-proxy.md).
 
@@ -132,7 +133,7 @@ In addition to tesla-smart-sentry, there is also tesla-ble-proxy, a Bluetooth pr
 ### BLE Mode
 
 > [!NOTE]  
-> Enabling Sentry Mode via Bluetooth is faster than via API. However, you must be within Bluetooth range of the vehicle. This mode does not work on Windows OS.
+> Enabling Sentry Mode via Bluetooth can be faster than via API. However, you must be within Bluetooth range of the vehicle. This mode does not work on Windows OS.
 
 > [!WARNING]  
 > Make sure to protect your private key when placing a Raspberry Pi outside near your vehicle. If your Raspberry Pi is stolen, your private key is at risk and could be used to access your vehicle. Check out the [tesla-ble-proxy reference architecture](./tesla-ble-proxy.md).
