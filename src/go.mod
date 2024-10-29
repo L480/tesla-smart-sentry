@@ -21,5 +21,5 @@ require (
 	github.com/raff/goble v0.0.0-20190909174656-72afc67d6a99 // indirect
 	github.com/sirupsen/logrus v1.5.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )
